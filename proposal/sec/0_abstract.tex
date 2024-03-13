@@ -1,0 +1,11 @@
+\begin{abstract}
+This project will contain three major parts. The first part of the project will involve editing the Efros Leung \cite{efros1999texture} texture synthesis code written for Homework 2 to perform hole filling on color images and accept multiple reference images. This will be used later to compare with the second hole filling algorithm that will be based on PatchMatch.
+
+The second part of the project will involve writing a new hole filling program based on the PatchMatch algorithm \cite{barnes2009patchmatch} which will accept multiple reference images. Instead of searching only the input image, this algorithm should be able to use patches in reference images. This could be useful if multiple images of the same scene are available, such as multiple frames of a video.
+
+The third part of the project will involve comparing the two algorithms. The goal will be for the second algorithm to both run faster and have a more qualitatively accurate result. If the PatchMatch based algorithm does not run faster, we will look into ways to speed up the runtime, however based on the papers this should be very unlikely to happen.
+
+If time permits, we may create a third algorithm based on Ashikhmin \cite{ashikhmin2001synthesizing} and compare it to the other two.
+
+Allowing for multiple could let our algorithms generate more accurate textures given many images of the same scene, perhaps from a video, an image collage, or a comic book.
+\end{abstract}
