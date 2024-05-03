@@ -4,17 +4,17 @@ import sys
 from PIL import Image
 import os
 
-def synthEfrosLeung(img, refs, winsize):
+def synthEfrosLeung(img, refs, winsize=7):
     ErrThreshold = 0.1
     r = winsize // 2
-    h,w = img.shape[0:2]
+    h,w = img.shape[:2]
     out = img
-    cache = [np.lib.stride_tricks.sliding_window_view(np.pad(ref, r, mode="symmetric"), (winsize, winsize, 4)) for ref in refs]
-    cache.append(np.lib.stride_tricks.sliding_window_view(np.pad(img, r, mode="symmetric"), (winsize, winsize)))
+    cache = [np.lib.stride_tricks.sliding_window_view(np.pad(ref, r, mode="symmetric"), (winsize, winsize), axis=(0,1)) for ref in refs]
+    cache.append(np.lib.stride_tricks.sliding_window_view(np.pad(img, r, mode="symmetric"), (winsize, winsize), axis=(0,1)))
     counter = 0
     done = False
     while not done:
-        mask_im = (out[:,:,3] >= 0).astype(int)
+        mask_im = (out[:,:,3] != 0).astype(int)
         window = np.ones((winsize, winsize))
         dilation = sp.binary_dilation(mask_im, structure=window) - mask_im
         pixelList = np.where(dilation)
@@ -45,6 +45,10 @@ if __name__ == "__main__":
     refs = []
     for file in os.listdir(dir):
         refs.append(Image.open(os.path.join(dir, file)))
-    winsize = sys.argv[3]
-    if not winsize % 2:
-        winsize += 1
+    if len(sys.argv) > 3:
+        winsize = sys.argv[3]
+        if not winsize % 2:
+            winsize += 1
+    else:
+        winsize = 7
+    synthEfrosLeung(img, refs, winsize)
