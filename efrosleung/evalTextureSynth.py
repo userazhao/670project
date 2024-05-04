@@ -36,7 +36,6 @@ def synthEfrosLeung(img, refs, winsize=7):
         hood = np.moveaxis(padout[px:px+winsize,py:py+winsize], 2, 0)
         ssds = [np.sum((windows - hood) ** 2 * ValidMask, axis=(2,3,4)) + 256*winsize**2*(windows[:,:,3,r,r] != 255) for windows in refcache]
         minSSD = np.min(ssds)
-        print(minSSD)
         BestMatches = []
         for n in range(0,len(ssds)):
             for i in range(0,h):
