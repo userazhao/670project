@@ -27,7 +27,7 @@ def synthPatchMatch(img, refs, rsmax, winsize=7):
         for x in range(0,ref.shape[0]):
             for y in range(0,ref.shape[1]):
                 samples.append((i+1, x, y))
-    holes = np.nonzero(img[:,:,3] == 0) # list of transparent pixels with nontransparent pixels within window
+    holes = np.nonzero(img[:,:,3] != 255) # list of transparent pixels
     n = holes.shape[0]
     nnf = []
     for i in range(0,n): # randomize
@@ -77,11 +77,11 @@ def synthPatchMatch(img, refs, rsmax, winsize=7):
     out.save("output.png")
 
 if __name__ == "__main__":
-    img = Image.open(sys.argv[1])
+    img = np.array(Image.open(sys.argv[1]))
     dir = sys.argv[2]
     refs = []
     for file in os.listdir(dir):
-        refs.append(Image.open(os.path.join(dir, file)))
+        refs.append(np.array(Image.open(os.path.join(dir, file))))
     rsmax = sys.argv[3]
     if len(sys.argv) > 4:
         winsize = sys.argv[4]
