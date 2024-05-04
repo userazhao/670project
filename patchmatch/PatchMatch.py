@@ -7,8 +7,8 @@ iters = 5
 
 def synthPatchMatch(img, refs, rsmax, winsize=7):
     r = winsize // 2
-    padded = [np.pad(ref, r, mode="symmetric") for ref in refs]
-    padded.insert(0, np.pad(img, r, mode="symmetric"))
+    padded = [np.pad(ref, ((r,r),(r,r),(0,0)), mode="symmetric") for ref in refs]
+    padded.insert(0, np.pad(img, ((r,r),(r,r),(0,0)), mode="symmetric"))
 
     def fill(i):
         padded[0][holes[i]] = padded[nnf[i][0]][nnf[i][1:]]
@@ -73,6 +73,7 @@ def synthPatchMatch(img, refs, rsmax, winsize=7):
                 yc = np.random.rand(np.range(ymin, ymax))
                 improve(j, (nnf[j][0], xc, yc))
                 rs //= 2
+            print("pixel", str(j) + "/" + str(n))
     out = Image.fromarray(padded[0][r:-r,r:-r])
     out.save("output.png")
 

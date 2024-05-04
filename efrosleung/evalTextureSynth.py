@@ -9,15 +9,19 @@ def synthEfrosLeung(img, refs, winsize=7):
     r = winsize // 2
     h,w = img.shape[:2]
     out = img
-    cache = [np.lib.stride_tricks.sliding_window_view(np.pad(ref, r, mode="symmetric"), (winsize, winsize), axis=(0,1)) for ref in refs]
-    cache.append(np.lib.stride_tricks.sliding_window_view(np.pad(img, r, mode="symmetric"), (winsize, winsize), axis=(0,1)))
+    cache = [np.lib.stride_tricks.sliding_window_view(np.pad(ref, ((r,r),(r,r),(0,0)), mode="symmetric"), (winsize, winsize), axis=(0,1)) for ref in refs]
+    cache.append(np.lib.stride_tricks.sliding_window_view(np.pad(img, ((r,r),(r,r),(0,0)), mode="symmetric"), (winsize, winsize), axis=(0,1)))
     counter = 0
     done = False
     while not done:
         mask_im = (out[:,:,3] == 255).astype(int)
         window = np.ones((winsize, winsize))
         dilation = sp.binary_dilation(mask_im, structure=window) - mask_im
-        pixelList = np.where(dilation)
+        pixelList = []
+        for i in range(0,h):
+            for j in range(0,w):
+                if dilation[i,j]:
+                    pixelList.append((i,j))
         sizes = sp.convolve(mask_im, window, mode="constant")
         sizes = [sizes[p] for p in pixelList]
         indices = np.argsort(sizes)
@@ -28,11 +32,20 @@ def synthEfrosLeung(img, refs, winsize=7):
                 return 0
             return mask_im[i,j]
         ValidMask = np.array([[maskCheck(i,j) for j in range(py-r,py+r+1)] for i in range(px-r,px+r+1)])
-        padout = np.pad(out, r, mode="symmetric")
-        hood = padout[px:px+winsize,py:py+winsize]
-        ssds = [np.sum((windows - hood) ** 2 * ValidMask, axis=(2,3)) for windows in cache]
+        padout = np.pad(out, ((r,r),(r,r),(0,0)), mode="symmetric")
+        hood = np.moveaxis(padout[px:px+winsize,py:py+winsize], 2, 0)
+        print(cache[0].shape)
+        print(hood.shape)
+        print(ValidMask.shape)
+        ssds = [np.sum((windows - hood) ** 2 * ValidMask, axis=(2,3,4)) for windows in cache]
         minSSD = np.min(ssds)
-        BestMatches = np.where(ssds <= minSSD*(1+ErrThreshold))
+        print(np.array(ssds).shape)
+        BestMatches = []
+        for n in range(0,len(ssds)):
+            for i in range(0,h):
+                for j in range(0,w):
+                    if ssds[n][i,j] <= minSSD*(1+ErrThreshold):
+                        BestMatches.append((n,i,j))
         out[px,py] = img[np.random.choice(BestMatches)]
         done = len(pixelList) == 1
         counter += 1
