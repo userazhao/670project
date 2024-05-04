@@ -9,8 +9,8 @@ def synthEfrosLeung(img, refs, winsize=7):
     r = winsize // 2
     h,w = img.shape[:2]
     out = img
-    cache = [np.lib.stride_tricks.sliding_window_view(np.pad(ref, ((r,r),(r,r),(0,0)), mode="symmetric"), (winsize, winsize), axis=(0,1)) for ref in refs]
-    cache.append(np.lib.stride_tricks.sliding_window_view(np.pad(img, ((r,r),(r,r),(0,0)), mode="symmetric"), (winsize, winsize), axis=(0,1)))
+    refcache = [np.lib.stride_tricks.sliding_window_view(np.pad(ref, ((r,r),(r,r),(0,0)), mode="symmetric"), (winsize, winsize), axis=(0,1)) for ref in refs]
+    refcache.insert(0, np.lib.stride_tricks.sliding_window_view(np.pad(img, ((r,r),(r,r),(0,0)), mode="symmetric"), (winsize, winsize), axis=(0,1)))
     counter = 0
     done = False
     while not done:
@@ -34,23 +34,25 @@ def synthEfrosLeung(img, refs, winsize=7):
         ValidMask = np.array([[maskCheck(i,j) for j in range(py-r,py+r+1)] for i in range(px-r,px+r+1)])
         padout = np.pad(out, ((r,r),(r,r),(0,0)), mode="symmetric")
         hood = np.moveaxis(padout[px:px+winsize,py:py+winsize], 2, 0)
-        print(cache[0].shape)
-        print(hood.shape)
-        print(ValidMask.shape)
-        ssds = [np.sum((windows - hood) ** 2 * ValidMask, axis=(2,3,4)) for windows in cache]
+        ssds = [np.sum((windows - hood) ** 2 * ValidMask, axis=(2,3,4)) + 256*winsize**2*(windows[:,:,3,r,r] != 255) for windows in refcache]
         minSSD = np.min(ssds)
-        print(np.array(ssds).shape)
+        print(minSSD)
         BestMatches = []
         for n in range(0,len(ssds)):
             for i in range(0,h):
                 for j in range(0,w):
                     if ssds[n][i,j] <= minSSD*(1+ErrThreshold):
                         BestMatches.append((n,i,j))
-        out[px,py] = img[np.random.choice(BestMatches)]
+        ind = BestMatches[np.random.choice(len(BestMatches))]
+        if ind[0] == 0:
+            out[px,py] = img[ind[1:]]
+        else:
+            out[px,py] = refs[ind[0]-1][ind[1:]]
         done = len(pixelList) == 1
         counter += 1
-        print("pixel", str(counter) + "/" + str(h*w))
-    return out.astype(np.uint8)
+        print(counter, len(pixelList))
+    outimg = Image.fromarray(out.astype(np.uint8))
+    outimg.save("../data/efOut.png")
 
 if __name__ == "__main__":
     img = np.array(Image.open(sys.argv[1]))
