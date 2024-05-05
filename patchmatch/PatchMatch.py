@@ -5,41 +5,58 @@ import os
 
 iters = 5
 
-def synthPatchMatch(img, refs, rsmax, winsize=7):
+def synthPatchMatch(img, refs, rsmax, winsize=17):
     r = winsize // 2
     padded = [np.pad(ref, ((r,r),(r,r),(0,0)), mode="symmetric") for ref in refs]
     padded.insert(0, np.pad(img, ((r,r),(r,r),(0,0)), mode="symmetric"))
+    mask = padded[0][:,:,3] != 255
 
+    def indToPos(ind):
+        return [ind // h + minbx + r, ind % h + minby + r]
     def fill(i):
-        padded[0][holes[i]] = padded[nnf[i][0]][nnf[i][1:]]
-    def ssd(holePos, patchPos):
-        fImg = padded[0][holePos[0]-r:holePos[0]+r, holePos[1]-r:holePos[1]+r,:2]
-        sImg = padded[patchPos[0]][patchPos[1]-r:patchPos[1]+r,patchPos[2]-r:patchPos[2]+r,:2]
+        holePos = indToPos(i)
+        if mask[holePos[0],holePos[1]]:
+            padded[0][holePos[0],holePos[1]] = padded[nnf[i][0]][nnf[i][1],nnf[i][2]]
+    def ssd(hInd, patchPos):
+        holePos = indToPos(hInd)
+        fImg = padded[0][holePos[0]:holePos[0]+r+r, holePos[1]:holePos[1]+r+r,:3]
+        sImg = padded[patchPos[0]][patchPos[1]:patchPos[1]+r+r,patchPos[2]:patchPos[2]+r+r,:3]
         return np.sum((fImg-sImg)**2)
 
+    holes = np.transpose(np.nonzero(img[:,:,3] != 255)) # list of transparent pixels
+    minbx = np.min(holes[:,0]) - r
+    maxbx = np.max(holes[:,0]) + r
+    minby = np.min(holes[:,1]) - r
+    maxby = np.max(holes[:,1]) + r
+    print(minbx, maxbx, minby, maxby) # debug
     samples = [] # list of indices of valid sample patches
     for x in range(0,img.shape[0]):
         for y in range(0,img.shape[1]):
-            if img[x,y,3] != 0:
+            if (x < minbx or x > maxbx) and (y < minby or y > maxby):
                 samples.append((0, x, y))
     for i in range(0,len(refs)):
         ref = refs[i]
         for x in range(0,ref.shape[0]):
             for y in range(0,ref.shape[1]):
                 samples.append((i+1, x, y))
-    holes = np.nonzero(img[:,:,3] != 255) # list of transparent pixels
-    n = len(holes)
+    h = maxbx-minbx
+    w = maxby-minby
+    n = h*w
+    print(h, w)
+    print(n)
     nnf = []
     for i in range(0,n): # randomize
         nnf.append(samples[np.random.choice(len(samples))])
         fill(i)
+    nnf = np.array(nnf)
     nnd = []
     for i in range(0,n):
-        nnd.append(ssd(holes[i], nnf[i]))
+        nnd.append(ssd(i, nnf[i]))
 
     def improve(hInd, patchPos):
-        candD = ssd(holes[hInd], padded[patchPos[0]][patchPos[1:]])
+        candD = ssd(hInd, patchPos)
         if nnd[hInd] > candD:
+            nnd[hInd] = candD
             nnf[hInd] = patchPos
             fill(hInd)
 
@@ -53,29 +70,30 @@ def synthPatchMatch(img, refs, rsmax, winsize=7):
             nnd = nnd[::-1]
         # propagate
         for j in range(0,n):
-            x = holes[i][0]
-            y = holes[i][1]
-            nInd = np.nonzero(holes == (x+s, y))
+            x, y = indToPos(i)
+            nInd = np.transpose(np.nonzero(np.all(holes == [x+s,y], axis=1))) #fix this
             if nInd.size > 0:
-                improve(j, (nnf[nInd[0]][0], nnf[nInd[0]][1]-s, nnf[nInd[0]][2]))
+                nInd = nInd[0,0]
+                improve(j, (nnf[nInd,0], nnf[nInd,1]-s, nnf[nInd,2]))
 
-            nInd = np.nonzero(holes == (x, y+s))
+            nInd = np.transpose(np.nonzero(np.all(holes == [x,y+s], axis=1)))
             if nInd.size > 0:
-                improve(j, (nnf[nInd[0]][0], nnf[nInd[0]][1], nnf[nInd[0]][2]-s))
+                nInd = nInd[0,0]
+                improve(j, (nnf[nInd][0], nnf[nInd,1], nnf[nInd,2]-s))
         # search
             rs = rsmax
             while rs > 1:
                 xmin = max(x-rs, 0)
                 ymin = max(y-rs, 0)
-                xmax = min(x+rs, samples[nnf[j][0]].shape[0]-r-r)
-                ymax = min(y+rs, samples[nnf[j][0]].shape[1]-r-r)
-                xc = np.random.rand(np.range(xmin, xmax))
-                yc = np.random.rand(np.range(ymin, ymax))
-                improve(j, (nnf[j][0], xc, yc))
+                xmax = min(x+rs, padded[nnf[j,0]].shape[0]-1-r-r)
+                ymax = min(y+rs, padded[nnf[j,0]].shape[1]-1-r-r)
+                xc = np.random.randint(xmin, xmax)
+                yc = np.random.randint(ymin, ymax)
+                improve(j, (nnf[j,0], xc, yc))
                 rs //= 2
-            print("pixel", str(j) + "/" + str(n))
+            print("pixel", str(j+1) + "/" + str(n), "iter", str(i+1) + "/" + str(5))
     out = Image.fromarray(padded[0][r:-r,r:-r])
-    out.save("output.png")
+    out.save("../data/patchOut.png")
 
 if __name__ == "__main__":
     img = np.array(Image.open(sys.argv[1]))
@@ -83,7 +101,7 @@ if __name__ == "__main__":
     refs = []
     for file in os.listdir(dir):
         refs.append(np.array(Image.open(os.path.join(dir, file))))
-    rsmax = sys.argv[3]
+    rsmax = int(sys.argv[3])
     if len(sys.argv) > 4:
         winsize = sys.argv[4]
         if not winsize % 2:
