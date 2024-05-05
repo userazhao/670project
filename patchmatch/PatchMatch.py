@@ -28,10 +28,10 @@ def synthPatchMatch(img, refs, rsmax, winsize=7):
             for y in range(0,ref.shape[1]):
                 samples.append((i+1, x, y))
     holes = np.nonzero(img[:,:,3] != 255) # list of transparent pixels
-    n = holes.shape[0]
+    n = len(holes)
     nnf = []
     for i in range(0,n): # randomize
-        nnf.append(np.random.choice(samples))
+        nnf.append(samples[np.random.choice(len(samples))])
         fill(i)
     nnd = []
     for i in range(0,n):
@@ -44,7 +44,7 @@ def synthPatchMatch(img, refs, rsmax, winsize=7):
             fill(hInd)
 
     for i in range(0,iters):
-        if iter % 2:
+        if i % 2:
             s = -1
         else:
             s = 1
