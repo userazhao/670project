@@ -5,22 +5,23 @@ import os
 
 iters = 5
 
-def synthPatchMatch(img, refs, rsmax, winsize=17):
+def synthPatchMatch(img, refs, rsmax, winsize=31):
     r = winsize // 2
     padded = [np.pad(ref, ((r,r),(r,r),(0,0)), mode="symmetric") for ref in refs]
     padded.insert(0, np.pad(img, ((r,r),(r,r),(0,0)), mode="symmetric"))
     mask = padded[0][:,:,3] != 255
 
-    def indToPos(ind):
-        return [ind // h + minbx + r, ind % h + minby + r]
     def fill(i):
-        holePos = indToPos(i)
+        holePos = [i // w + minbx + r, i % w + minby + r]
+        subimg[i//w, i%w] = padded[nnf[i][0]][nnf[i][1],nnf[i][2]]
         if mask[holePos[0],holePos[1]]:
             padded[0][holePos[0],holePos[1]] = padded[nnf[i][0]][nnf[i][1],nnf[i][2]]
     def ssd(hInd, patchPos):
-        holePos = indToPos(hInd)
-        fImg = padded[0][holePos[0]:holePos[0]+r+r, holePos[1]:holePos[1]+r+r,:3]
-        sImg = padded[patchPos[0]][patchPos[1]:patchPos[1]+r+r,patchPos[2]:patchPos[2]+r+r,:3]
+        pX, pY = patchPos[1:]
+        holePos = [i//w, i%w]
+        print(holePos[1])
+        fImg = subimg[holePos[0]:holePos[0]+r+r, holePos[1]:holePos[1]+r+r,:3]
+        sImg = padded[patchPos[0]][pX:pX+r+r,pY:pY+r+r,:3]
         return np.sum((fImg-sImg)**2)
 
     holes = np.transpose(np.nonzero(img[:,:,3] != 255)) # list of transparent pixels
@@ -28,7 +29,6 @@ def synthPatchMatch(img, refs, rsmax, winsize=17):
     maxbx = np.max(holes[:,0]) + r
     minby = np.min(holes[:,1]) - r
     maxby = np.max(holes[:,1]) + r
-    print(minbx, maxbx, minby, maxby) # debug
     samples = [] # list of indices of valid sample patches
     for x in range(0,img.shape[0]):
         for y in range(0,img.shape[1]):
@@ -41,19 +41,27 @@ def synthPatchMatch(img, refs, rsmax, winsize=17):
                 samples.append((i+1, x, y))
     h = maxbx-minbx
     w = maxby-minby
+    subimg = np.zeros((h,w,4))
     n = h*w
-    print(h, w)
-    print(n)
     nnf = []
     for i in range(0,n): # randomize
         nnf.append(samples[np.random.choice(len(samples))])
-        fill(i)
     nnf = np.array(nnf)
     nnd = []
     for i in range(0,n):
         nnd.append(ssd(i, nnf[i]))
+    for i in range(0,n):
+        fill(i)
 
     def improve(hInd, patchPos):
+        iNum = patchPos[0]
+        if iNum == 0:
+            xMax, yMax = img.shape[:-1]
+        else:
+            xMax, yMax = refs[iNum-1].shape[:-1]
+        pX = min(max(patchPos[1],0),xMax-1)
+        pY = min(max(patchPos[2],0),yMax-1)
+        patchPos = [iNum, pX, pY]
         candD = ssd(hInd, patchPos)
         if nnd[hInd] > candD:
             nnd[hInd] = candD
@@ -62,25 +70,22 @@ def synthPatchMatch(img, refs, rsmax, winsize=17):
 
     for i in range(0,iters):
         if i % 2:
-            s = -1
-        else:
             s = 1
+        else:
+            s = -1
         if i != 0:
             nnf = nnf[::-1]
             nnd = nnd[::-1]
-        # propagate
         for j in range(0,n):
-            x, y = indToPos(i)
-            nInd = np.transpose(np.nonzero(np.all(holes == [x+s,y], axis=1))) #fix this
-            if nInd.size > 0:
-                nInd = nInd[0,0]
-                improve(j, (nnf[nInd,0], nnf[nInd,1]-s, nnf[nInd,2]))
+            # propagate
+            x = i // w
+            y = i % w
+            nInd = min(max(j + s, 0), n-1)
+            improve(j, (nnf[nInd,0], nnf[nInd,1]-s, nnf[nInd,2]))
 
-            nInd = np.transpose(np.nonzero(np.all(holes == [x,y+s], axis=1)))
-            if nInd.size > 0:
-                nInd = nInd[0,0]
-                improve(j, (nnf[nInd][0], nnf[nInd,1], nnf[nInd,2]-s))
-        # search
+            nInd = min(max(j + s*w, 0), n-1)
+            improve(j, (nnf[nInd][0], nnf[nInd,1], nnf[nInd,2]-s))
+            # search
             rs = rsmax
             while rs > 1:
                 xmin = max(x-rs, 0)
@@ -91,9 +96,11 @@ def synthPatchMatch(img, refs, rsmax, winsize=17):
                 yc = np.random.randint(ymin, ymax)
                 improve(j, (nnf[j,0], xc, yc))
                 rs //= 2
-            print("pixel", str(j+1) + "/" + str(n), "iter", str(i+1) + "/" + str(5))
+            print("pixel", str(j+1) + "/" + str(n), "iter", str(i+1) + "/" + str(iters))
     out = Image.fromarray(padded[0][r:-r,r:-r])
     out.save("../data/patchOut.png")
+    subimg = Image.fromArray(subimg)
+    out.save("../data/debugimg.png")
 
 if __name__ == "__main__":
     img = np.array(Image.open(sys.argv[1]))
