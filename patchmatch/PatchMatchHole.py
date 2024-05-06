@@ -125,10 +125,10 @@ def initPatchMatch(img, refs):
     for i in range(0,n):
         if inHole(i):
             getVotes(i)
-        print("vote", str(i) + "/" + str(n))
+            print("vote", str(i) + "/" + str(n))
     
-    out = subimg / votes
-    out = Image.fromarray(out.astype(np.uint8))
+    fill = subimg / votes
+    out = Image.fromarray(fill.astype(np.uint8))
     out.save("../data/holeOut.png")
 
 if __name__ == "__main__":
