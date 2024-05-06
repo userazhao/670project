@@ -75,8 +75,8 @@ def synthPatchMatch(img, ref, winsize=7):
 if __name__ == "__main__":
     img = np.array(Image.open(sys.argv[1]))
     ref = np.array(Image.open(sys.argv[2]))
-    if len(sys.argv) > 4:
-        winsize = sys.argv[4]
+    if len(sys.argv) > 3:
+        winsize = sys.argv[3]
         if not winsize % 2:
             winsize += 1
     else:

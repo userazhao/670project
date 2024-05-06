@@ -86,8 +86,8 @@ if __name__ == "__main__":
     img = np.array(Image.open(sys.argv[1]))
     dir = sys.argv[2]
     refs = np.array([np.array(Image.open(os.path.join(dir, file))) for file in os.listdir(dir)])
-    if len(sys.argv) > 4:
-        winsize = sys.argv[4]
+    if len(sys.argv) > 3:
+        winsize = sys.argv[3]
         if not winsize % 2:
             winsize += 1
     else:
