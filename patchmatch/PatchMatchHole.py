@@ -111,11 +111,10 @@ def initPatchMatch(img, refs):
     def getVotes(i):
         x0 = i//w
         y0 = i%w
-        for xs in range(-r,r+1):
-            i1 = i+xs*w
-            for ys in range(-r,r+1):
-                i1 += ys
-                if nnd[i1] != -1:
+        for xs in range(-winsize,winsize+1):
+            for ys in range(-winsize,winsize+1):
+                i1 = i+xs*w+ys
+                if i1 >= 0 and i1 < n and nnd[i1] != -1:
                     x = x0 + nnf[i1,1]
                     y = y0 + nnf[i1,2]
                     ref = nnf[i1,0]
