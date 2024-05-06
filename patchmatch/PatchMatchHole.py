@@ -12,7 +12,7 @@ def initPatchMatch(img, refs):
     refn = refs.shape[0]
 
     holes = np.transpose(np.nonzero(img[:,:,3] != 255))
-    winsize = max(np.max(holes[:,0])-np.min(holes[:,0]),np.max(holes[:,1])-np.min(holes[:,1])) // 2
+    winsize = min(np.max(holes[:,0])-np.min(holes[:,0]),np.max(holes[:,1])-np.min(holes[:,1])) // 2
     if not winsize % 2:
         winsize += 1
     r = winsize//2
