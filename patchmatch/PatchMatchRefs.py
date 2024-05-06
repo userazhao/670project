@@ -60,10 +60,10 @@ def synthPatchMatch(img, refs, winsize=7):
             for ref in range(0,refn):
                 improve(j, refRandVec(j, ref))
             # search
-            x = j//w
-            y = j%w
             rs = rsmax
             while rs > 1:
+                x = j//w + nnf[j,1]
+                y = j%w + nnf[j,2]
                 xmin = max(-rs, -x)
                 ymin = max(-rs, -y)
                 xmax = min(rs, h-x-1)

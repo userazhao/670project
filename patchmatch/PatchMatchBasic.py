@@ -50,10 +50,10 @@ def synthPatchMatch(img, ref, winsize=7):
             if nInd >= 0 and nInd < n:
                 improve(j, nnf[nInd])
             # search
-            x = j//w
-            y = j%w
             rs = rsmax
             while rs > 1:
+                x = j//w + nnf[j,0]
+                y = j%w + nnf[j,1]
                 xmin = max(-rs, -x)
                 ymin = max(-rs, -y)
                 xmax = min(rs, h-x-1)
