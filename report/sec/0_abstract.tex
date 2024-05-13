@@ -1,0 +1,9 @@
+\begin{abstract}
+Given a set of similar images, how can information from all images be incorporated to fill a hole in one of the images? After looking through available hole filling methods, I found that they were all directed at filling a hole using only information from the rest of the same input image or at most one other source image. The goal of this project was to first study two existing algorithms capable of image inpainting, Efros-Leung and PatchMatch, and then modify them so that they could perform hole filling using multiple reference images. Additionally, an analysis of runtime, complexity, and plausibility of output would be performed to determine if such algorithms were suitable for the task at hand.
+
+Finally, the outputs from the two handcrafted algorithms would be compared to output from freely available image inpainting neural net. In theory, the modified PatchMatch algorithm should have certain advantages. First, it's likely that the dataset that the neural net was trained on does not contain the reference images being fed into the PatchMatch algorithm. This means that if a certain feature is obscured in the input but visible in the source, it will not be accurately replicated by the neural net but will be replicated by PatchMatch. Second, the handcrafted algorithms do not require any training time, and certain hyperparameters such as window size can be easily and instantly tuned.
+
+Practical applications of this algorithm include any situation where a user has multiple similar reference images and wishes to fill a hole in one of them. In specific, the most likely scenario I envision is hole filling in the context of a video, where one can take advantage of the fact that consecutive frames of a video are likely to be visually similar and therefore share similar patches. 
+
+The code for this project can be found at 
+\end{abstract}

@@ -1,30 +1,32 @@
-\begin{conclusion}
-    
-    
 \section{Conclusion}
+\subsection*{Discussion}
+\begin{figure}
+\centering
+\fbox{\includegraphics[width=0.8\linewidth]{../data/fullOutput2}}
+\caption{PatchMatch fill output present on my project poster.}
+\label{fig:blur}
+\end{figure}
 
+After running my PatchMatch algorithm on the apple dataset, I noticed that the output (\ref{fig:blur}) was very blurry. At first, I rationalized that the hole was too large (around $\frac 18$th the size of the image) and too round, causing the window size to be too large and the vote aggregation to include too many disparate vectors, resulting in a blurry outputted pixel. However, after reviewing my code I realized I was inputting the target image as a source as well, and so the blurriness from upscaling was being carried over between steps. After changing the code to remove the target from the sources, the output became much less blurry (\ref{fig:pmapple}).
 
-In conclusion, our project has aimed to address the challenges of texture synthesis and hole filling within images by exploring innovative methods inspired by both academic research and practical implementation. Through a thorough review of existing literature and leveraging advancements in machine learning and optimization techniques, we have proposed novel algorithms with the potential to overcome the limitations of current methods.
+Based on my experiments in this paper, I have come to the unfortunate conclusion that modern neural nets will outperform my handcrafted PatchMatch algorithm in the majority of situations. However, the silver lining is that in specific instances, such as the Spongebob dataset, my handcrafted algorithm will still produce visually better results.
 
-Our investigation began with a detailed analysis of seminal papers such as "Texture synthesis by non-parametric sampling" by Efros and Leung, and "PatchMatch: A randomized correspondence algorithm for structural image editing" by Barnes et al. These works provided valuable insights into the state of the art in texture synthesis and served as a foundation for our research.
+\begin{figure}
+\centering
+\fbox{\includegraphics[width=0.8\linewidth]{../data/pixlr}}
+\caption{Neural net hole fill present on my project poster.}
+\label{fig:pixlr}
+\end{figure}
 
-Building upon these foundations, we developed and implemented several models and algorithms tailored to the specific challenges of texture synthesis and hole filling. These algorithms, including variations of Efros and Leung's non-parametric sampling method and PatchMatch, were designed to improve efficiency, effectiveness, and structural coherence.
+Originally, the neural net I was using was one from pixlr.com, which did not produce very good results (\ref{fig:pixlr}). I found out about LaMa after the poster presentation while looking online to make sure that I was truly pitting my algorithm against the best that neural nets could offer. It was a bit shocking how much better it was able to perform on the apple dataset, but I'm glad that my PatchMatch algorithm could outperform LaMa on the Spongebob dataset. In both cases LaMa was much faster, though.
 
-Through a series of experiments conducted on diverse datasets and image scenarios, we evaluated the performance of our proposed methods against state-of-the-art techniques. Our experiments were designed to answer key questions regarding the robustness, scalability, and overall quality of the synthesized textures.
+It seems that PatchMatch will still have a place when it comes to certain video applications like cartoons and movies, where the camera and lighting remain relatively stable between frames. As for Efros Leung, it seems like there is no longer a setting where it could be the best hole filling algorithm for the job.
 
-\subsection{Discussion }
+\subsection*{Future work}
+There are a few improvements to my PatchMatch algorithm that I will make in the future.
 
-The results of our experiments demonstrate promising advancements in the field of texture synthesis and hole filling. Our proposed methods have shown improvements in both runtime efficiency and synthesis quality compared to existing approaches. Specifically, we observed enhanced structural coherence and realism in the synthesized textures, particularly when dealing with complex textures and large holes.
+First is that I will probably migrate the code from Python to C++. I only coded in Python in the first place to be sure that any partners from this class would know the language. The switch to C++ should allow me to achieve a better runtime and also simplify the logic with my own data structures. I already mentioned that a doubly linked list would have been helpful, but my own image tensor data structure would have been helpful too, so that I could store my NNF and NND in the same data structure as the pixel values and more easily process edge cases.
 
-However, it is essential to acknowledge that our proposed methods are not without limitations. Challenges such as parameter tuning, handling of diverse textures, and integration with multiple reference images remain areas for further exploration and refinement.
+A feature I wish to add is the ability to have different dimensions for the target and source images. In the PatchMatch paper, it is assumed that both will have the same dimensions, but from a mathematical standpoint, I do not think there is a reason why they should have to be. Another feature I wish to add is the ability to have holes in the source images. Similar to the feature of having different sized sources, this would make the algorithm compatible with more inputs.
 
-\subsection{Future Work}
-
-Looking ahead, there are several avenues for future research and development in this area. First and foremost, we plan to conduct further empirical studies to fine-tune our algorithms and validate their performance across a broader range of datasets and scenarios. Additionally, exploring the integration of deep learning techniques and generative models holds promise for advancing the state of the art in texture synthesis.
-
-Moreover, we recognize the importance of real-world applications of texture synthesis, such as image restoration, inpainting, and augmented reality. Future work will focus on adapting our methods to address specific use cases and optimizing them for practical deployment.
-
-In summary, our project represents a significant step forward in the quest for more efficient, effective, and versatile texture synthesis and hole filling techniques. By combining insights from academia and leveraging cutting-edge technologies, we are poised to make meaningful contributions to the fields of computer vision, image processing, and beyond.
-
-
-\end{conclusion}
+One feature from the original paper that I probably will not include is the structure and feature guides that they allow users to draw. Since I have not created a GUI, it would be difficult to implement this, and it goes beyond the scope of what I want to do with this project.

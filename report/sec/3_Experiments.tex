@@ -1,19 +1,25 @@
-\begin{experiments}
-    
 \section{Experiments}
+\subsection*{Description and questions}
+When designing my experiments and dataset, there were a few questions I wanted to answer:
+\begin{itemize}
+\item Which hole filling method would be fastest? Based on my complexity analysis and prior use of Efros Leung, I was sure that Efros Leung would be the slowest. I was also pretty sure that the AI hole filler would be faster than my handcrafted PatchMatch, since the neural net only has to feed the image through its MLP and there is no iterating to be done.
+\item Which hole filling method produces the most plausible results, and under what circumstances?
+\item Will Efros Leung preserve structures? Given that Efros Leung is a greedy algorithm that operates on pixels, I don't think it will be able to preserve nonperiodic structures.
+\item Will my PatchMatch be able to peek around the hole using the reference images to fill it in more accurately than Efros Leung and LaMa?
+\item Will my multiple reference PatchMatch have a better PSNR than the basic PatchMatch?
+\end{itemize}
 
-\subsection{Description of Testbed and Experiment Design}
+To answer these questions, I created a dataset of photos of apples on a table. The apple that I want to remove conveniently blocks a knot in the wood. If my PatchMatch performs well, it should be able to reproduce a similar looking knot that other methods do not.
 
-Testbed Setup: The experiments are conducted on a high-performance computing cluster equipped with multi-core CPUs and GPUs to leverage parallel processing capabilities. We use Python scripts for algorithm implementation and libraries such as NumPy, SciPy, and PIL for image processing and analysis.
-Datasets: We use a diverse range of image datasets, including standard benchmark datasets such as Berkeley Segmentation Dataset (BSDS) and MIT-Adobe FiveK Dataset, as well as custom datasets with synthetic and real-world textures. These datasets contain images with varying textures, sizes, and levels of complexity, providing a comprehensive testbed for evaluation.
-Experimental Questions: Our experiments are designed to answer the following key questions:
-How does our method compare to state-of-the-art techniques in terms of visual quality and accuracy?
-What is the runtime performance of our method compared to existing approaches, especially concerning scalability and efficiency?
-How does our method perform under different scenarios, such as varying input textures, hole sizes, and reference images?
-What are the strengths and limitations of our method compared to alternative approaches, and how can they be addressed in future research?
+In addition, I took a series of frames from a Spongebob episode to do a proof of concept test on a video, which was one of the applications I had in mind for this algorithm.
 
-\subsection{Details of Experiments and Results}
+\subsection*{Details and results}
+First, when it comes to runtime, the best runtime was very solidly the LaMa neural net. \ref{fig:lamaapple} and \ref{fig:lamasponge} took only a few seconds to complete, despite running at a higher resolution than the input to my PatchMatch and Efros Leung algorithms. My PatchMatch algorithm came in second place, being able to generate \ref{fig:pmapple} and \ref{fig:pmsponge} in a few minutes. Efros Leung was slowest, taking longer than PatchMatch to generate \ref{fig:efapple} despite running on a much lower resolution input.
 
-We measure the performance of our method using standard metrics such as structural similarity index (SSIM), peak signal-to-noise ratio (PSNR), and mean squared error (MSE). The results demonstrate that our method achieves competitive performance compared to state-of-the-art techniques across various datasets and scenarios. We conduct visual inspections of the synthesized textures and compare them to ground truth data and results obtained from existing methods. The qualitative assessment highlights the effectiveness of our method in preserving structural coherence, textural consistency, and overall realism, especially in challenging scenarios with complex textures and irregular hole shapes. We analyze the runtime performance of our method on different hardware configurations and input sizes. The experiments demonstrate the efficiency and scalability of our method, with significantly reduced computation times compared to existing approaches, making it suitable for real-time and interactive applications. We evaluate the robustness of our method to various types of input data, including images with different textures, sizes, and levels of damage or missing regions. The analysis reveals the resilience of our method to common challenges in texture synthesis and hole filling, indicating its applicability across diverse scenarios.
+When it comes to plausibility of results, LaMa (\ref{fig:lamaapple}) beat both Efros Leung (\ref{fig:efapple}) and PatchMatch (\ref{fig:pmapple}) when it came to the apple dataset (\ref{fig:apples}), with PatchMatch even being outperformed by Efros Leung. LaMa produced a very clear and plausible output without any artifacting. Efros Leung produced a somewhat reasonable fill even though it somewhat failed to continue the rings on the wood. On the other hand, PatchMatch's fill had severe artifacts at the border of the hole. This can probably be explained by the fact that none of the source images had the same camera angle and lighting conditions as the target image, resulting in a discoloration.
 
-\end{experiments}
+However, in the Spongebob dataset (\ref{fig:sponge}), PatchMatch (\ref{fig:pmsponge}) managed to completely outperform LaMa. We see that LaMa has a smudgy fill which leaves a floating table and fails to continue the lattice pattern. On the other hand, my PatchMatch algorithm gives a nearly perfect hole fill, with only a few jagged edges noticeable on close inspection. This is because my PatchMatch algorithm was able to search the other source images for corresponding patches obscured by the hole, which LaMa could not do.
+
+In order to test the efficacy of my PatchMatch versus the original version, I generated target images using both on both of the datasets (\ref{fig:applescompare}, \ref{fig:spongecompare}). For the apple dataset, the two images don't visually look very different, but for the Spongebob dataset, my PatchMatch output (\ref{fig:spongerefs}) is visibly more full and complete than the original PatchMatch (\ref{fig:spongebasic}). The PSNR confirms that my version of the algorithm is more accurate, with my version's PSNR slightly edging out the original's in both datasets (77.50 vs. 78.33 and 81.16 vs 82.00).
+
+One thing to note is that in my target image generations (\ref{fig:applescompare}, \ref{fig:spongecompare}), all of the images contain some noticeable artifacts. This is because certain patches in the target image simply do not exist in the source images, so the algorithm is doing its best to approximate, resulting in these splotches. This is another reason why my version of PatchMatch could be better than the original version, since more source images means more different patches available to copy into the output.
